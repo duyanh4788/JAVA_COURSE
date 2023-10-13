@@ -1,4 +1,4 @@
-# ![RealWorld Example App using Kotlin and Spring](example-logo.png)
+# ![RealWorld Example App using Spring BOOT](example-logo.png)
 
 [![Actions](https://github.com/gothinkster/spring-boot-realworld-example-app/workflows/Java%20CI/badge.svg)](https://github.com/gothinkster/spring-boot-realworld-example-app/actions)
 
