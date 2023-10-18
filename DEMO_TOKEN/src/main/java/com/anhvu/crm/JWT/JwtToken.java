@@ -32,7 +32,7 @@ public class JwtToken {
     public JwtToken(BCryptPasswordEncoder bCryptPasswordEncoder) {
     }
 
-    public String generateToken(User user) {
+    public String generateToken(User user, String secrectKey) {
         try {
             Instant now = Instant.now();
             Instant expiryInstant = now.plus(JWT_EXPIRATION, ChronoUnit.MILLIS);
@@ -51,7 +51,7 @@ public class JwtToken {
                     .build();
 
             SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claims);
-            signedJWT.sign(new MACSigner(JWT_SECRET));
+            signedJWT.sign(new MACSigner(secrectKey));
 
             return signedJWT.serialize();
         } catch (JOSEException | IOException ex) {

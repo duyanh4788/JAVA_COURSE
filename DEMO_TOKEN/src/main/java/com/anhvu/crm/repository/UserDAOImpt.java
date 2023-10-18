@@ -7,7 +7,6 @@ import com.anhvu.crm.entity.User;
 import com.anhvu.crm.interfaces.UserDAO;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 
 @Repository
@@ -36,12 +35,8 @@ public class UserDAOImpt implements UserDAO {
     public User findByUserName(String userName) {
         TypedQuery<User> query = entityManager.createQuery("FROM User where userName=:theData", User.class);
         query.setParameter("theData", userName);
-        try {
-            User user = query.getSingleResult();
-            return user;
-        } catch (NoResultException e) {
-            return null;
-        }
+        User user = query.getSingleResult();
+        return user;
     }
 
 }
