@@ -15,6 +15,7 @@ import java.util.Base64;
 
 import com.anhvu.crm.entity.User;
 import com.anhvu.crm.exception.ExceptionError;
+import com.anhvu.crm.interfaces.AuthService;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -26,13 +27,15 @@ import com.nimbusds.jwt.SignedJWT;
 
 @Component
 public class JwtToken {
-    private final String JWT_SECRET = "Yqs36pN/M2Hcc6IqrVkAWSOcn0TYkowp7Oc1Fz5jNdc=";
-    private final long JWT_EXPIRATION = 604800000L;
+    private final long JWT_EXPIRATION = 7 * 24 * 60 * 60 * 1000L;
+    private AuthService authService;
 
-    public JwtToken(BCryptPasswordEncoder bCryptPasswordEncoder) {
+    public JwtToken(BCryptPasswordEncoder bCryptPasswordEncoder, AuthService theAuthService) {
+        authService = theAuthService;
+
     }
 
-    public String generateToken(User user, String secrectKey) {
+    public String generateToken(User user, String publicKey) {
         try {
             Instant now = Instant.now();
             Instant expiryInstant = now.plus(JWT_EXPIRATION, ChronoUnit.MILLIS);
@@ -51,7 +54,7 @@ public class JwtToken {
                     .build();
 
             SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claims);
-            signedJWT.sign(new MACSigner(secrectKey));
+            signedJWT.sign(new MACSigner(publicKey));
 
             return signedJWT.serialize();
         } catch (JOSEException | IOException ex) {
@@ -69,10 +72,10 @@ public class JwtToken {
         }
     }
 
-    public Long getUserIdFromJWT(String token) throws java.text.ParseException {
+    public Long getUserIdFromJWT(String token, String publicKey) throws java.text.ParseException {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
-            JWSVerifier verifier = new MACVerifier(JWT_SECRET);
+            JWSVerifier verifier = new MACVerifier(publicKey);
             if (signedJWT.verify(verifier)) {
                 JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
                 String subject = claims.getSubject();
@@ -88,12 +91,22 @@ public class JwtToken {
         }
     }
 
-    public boolean validateToken(String authToken) throws java.text.ParseException {
+    public boolean validateToken(String authToken, String publicKey, int AuthId) throws java.text.ParseException {
         try {
             SignedJWT signedJWT = SignedJWT.parse(authToken);
-            JWSVerifier verifier = new MACVerifier(JWT_SECRET);
-            return signedJWT.verify(verifier);
+            JWSVerifier verifier = new MACVerifier(publicKey);
+            if (signedJWT.verify(verifier)) {
+                Date claims = signedJWT.getJWTClaimsSet().getExpirationTime();
+                long expInSeconds = claims.getTime() / 1000;
+                long nowInSeconds = new Date().getTime();
+                if (nowInSeconds < expInSeconds) {
+                    return true;
+                }
+            }
+            authService.delete(AuthId);
+            throw new ExceptionError("Invalid or expired JWT token");
         } catch (JOSEException ex) {
+            authService.delete(AuthId);
             throw new ExceptionError("Invalid JWT token");
         }
     }

@@ -40,7 +40,8 @@ public class AuthToken {
     @Column(name = "public_key", nullable = true)
     private String publicKey;
 
-    @Column(name = "key_token")
+    @org.hibernate.annotations.ColumnDefault("''")
+    @Column(columnDefinition = "VARCHAR(255)")
     private String keyToken;
 
     @Column(name = "refresh_token")

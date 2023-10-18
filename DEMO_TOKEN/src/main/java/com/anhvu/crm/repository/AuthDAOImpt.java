@@ -10,6 +10,7 @@ import com.anhvu.crm.interfaces.AuthDAO;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.Query;
 
 @Repository
 public class AuthDAOImpt implements AuthDAO {
@@ -30,9 +31,24 @@ public class AuthDAOImpt implements AuthDAO {
     }
 
     @Override
-    public List<AuthToken> findByUserId(int id) {
-        TypedQuery<AuthToken> query = entityManager.createQuery("from AuthToken where userId:=theData",
+    public AuthToken findByKeyToken(String keyToken) {
+        TypedQuery<AuthToken> query = entityManager.createQuery("from AuthToken where keyToken = :theData",
                 AuthToken.class);
+        query.setParameter("theData", keyToken);
+        List<AuthToken> authTokens = query.getResultList();
+
+        if (!authTokens.isEmpty()) {
+            return authTokens.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public List<AuthToken> findByUserId(int id) {
+        TypedQuery<AuthToken> query = entityManager.createQuery("from AuthToken where userId=:theData",
+                AuthToken.class);
+        query.setParameter("theData", id);
         List<AuthToken> authTokens = query.getResultList();
         return authTokens;
     }
@@ -44,10 +60,16 @@ public class AuthDAOImpt implements AuthDAO {
 
     @Override
     public void delete(int id) {
-        TypedQuery<AuthToken> query = entityManager.createQuery("from AuthToken where userId:=theData",
-                AuthToken.class);
-        List<AuthToken> authTokens = query.getResultList();
-        entityManager.remove(authTokens);
+        Query query = entityManager.createQuery("delete from AuthToken where id=:theData");
+        query.setParameter("theData", id);
+        query.executeUpdate();
+    }
+
+    @Override
+    public void deleteByUserId(int userId) {
+        Query query = entityManager.createQuery("delete from AuthToken where userId=:theData");
+        query.setParameter("theData", userId);
+        query.executeUpdate();
     }
 
 }

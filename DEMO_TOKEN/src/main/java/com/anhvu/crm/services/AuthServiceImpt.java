@@ -9,6 +9,8 @@ import com.anhvu.crm.entity.AuthToken;
 import com.anhvu.crm.interfaces.AuthDAO;
 import com.anhvu.crm.interfaces.AuthService;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class AuthServiceImpt implements AuthService {
 
@@ -25,18 +27,31 @@ public class AuthServiceImpt implements AuthService {
     }
 
     @Override
+    public AuthToken findByKeyToken(String keyToken) {
+        return authDAO.findByKeyToken(keyToken);
+    }
+
+    @Override
     public List<AuthToken> findByUserId(int id) {
         return authDAO.findByUserId(id);
     }
 
     @Override
+    @Transactional
     public void save(AuthToken theToken) {
         authDAO.save(theToken);
     }
 
     @Override
+    @Transactional
     public void delete(int id) {
         authDAO.delete(id);
+    }
+
+    @Override
+    @Transactional
+    public void deleteByUserId(int userId) {
+        authDAO.deleteByUserId(userId);
     }
 
 }

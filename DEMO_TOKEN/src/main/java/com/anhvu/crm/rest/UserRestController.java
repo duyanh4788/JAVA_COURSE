@@ -22,8 +22,8 @@ import com.anhvu.crm.entity.AuthToken;
 import com.anhvu.crm.entity.User;
 import com.anhvu.crm.exception.ExceptionError;
 import com.anhvu.crm.exception.ResponseSuccess;
+import com.anhvu.crm.interfaces.AuthService;
 import com.anhvu.crm.interfaces.UserService;
-import com.anhvu.crm.services.AuthServiceImpt;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,12 +33,13 @@ import jakarta.servlet.http.HttpServletResponse;
 @RequestMapping("/api/user")
 public class UserRestController {
     private UserService userService;
-    private AuthServiceImpt authServiceImpt;
+    private AuthService authService;
     private JwtToken jwtToken;
 
-    public UserRestController(UserService theUserService, JwtToken theJwtToken) {
+    public UserRestController(UserService theUserService, JwtToken theJwtToken, AuthService theAuthService) {
         userService = theUserService;
         jwtToken = theJwtToken;
+        authService = theAuthService;
     }
 
     @PreAuthorize("hasRole('1')")
@@ -69,23 +70,23 @@ public class UserRestController {
         String passWord = user.getPassWord();
         String thePassWord = theUser.getPassWord();
         if (BCrypt.checkpw(thePassWord, passWord)) {
-            List<AuthToken> authTokens = authServiceImpt.findByUserId(user.getId());
+            List<AuthToken> authTokens = authService.findByUserId(user.getId());
             if (authTokens.size() >= 5) {
-                authServiceImpt.delete(user.getId());
+                authService.deleteByUserId(user.getId());
                 throw new ExceptionError(
                         "You has login upto 5 device, we are remove history login to all device,  please login again");
             }
-            String secrectKey = jwtToken.generateSecretKey();
+            String publicKey = jwtToken.generateSecretKey();
             String privateKey = jwtToken.generateSecretKey();
-            String token = jwtToken.generateToken(user, secrectKey);
+            String token = jwtToken.generateToken(user, publicKey);
             String refreshToken = jwtToken.generateToken(user, privateKey);
             AuthToken authRes = new AuthToken();
-            authRes.setPublicKey(secrectKey);
+            authRes.setPublicKey(publicKey);
             authRes.setPrivateKey(privateKey);
             authRes.setUserId(user.getId());
             authRes.setKeyToken(token);
             authRes.setRefreshToken(refreshToken);
-            authServiceImpt.save(authRes);
+            authService.save(authRes);
             Cookie cookie = new Cookie("jwtToken", token);
             cookie.setPath("/");
             response.addCookie(cookie);
